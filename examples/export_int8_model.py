@@ -12,6 +12,13 @@ from smoothquant.smooth import smooth_lm
 
 from smoothquant.calibration import get_static_decoder_layer_scales
 
+def record_gpu_memory(prefix):
+    print('-' * 80)
+    for i in range(torch.cuda.device_count()):
+        memory_allocated = torch.cuda.memory_allocated(i)
+        max_memory_allocated = torch.cuda.max_memory_allocated(i)
+        print(f'({prefix}) memory use in device {i} (MiB): {memory_allocated / 1024 / 1024}, max (MiB): {max_memory_allocated / 1024 / 1024}')
+    print('-' * 80)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -27,9 +34,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     model = OPTForCausalLM.from_pretrained(
         args.model_name, device_map="sequential", torch_dtype=torch.float16)
+    record_gpu_memory('load fp32 model')
     act_scales = torch.load(args.act_scales)
     smooth_lm(model, act_scales, 0.5)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    record_gpu_memory('after smooth')
 
     if not os.path.exists(args.dataset_path):
         print(f'Cannot find the dataset at {args.dataset_path}')
@@ -52,5 +61,6 @@ if __name__ == '__main__':
         print(f"Saved scaling factors at {output_path}")
     else:
         int8_model = Int8OPTForCausalLM.from_float(model, decoder_layer_scales)
+        record_gpu_memory('after quantize')
         int8_model.save_pretrained(output_path)
         print(f"Saved int8 model at {output_path}")
