@@ -54,8 +54,7 @@ def get_act_scales(model, tokenizer, dataset_path, num_samples=512, seq_len=512)
 @torch.no_grad()
 def get_static_decoder_layer_scales(model,
                                     tokenizer,
-                                    dataset_path,
-                                    num_samples=512,
+                                    dataloader,
                                     seq_len=512,
                                     ):
     model.eval()
@@ -86,12 +85,11 @@ def get_static_decoder_layer_scales(model,
                 partial(stat_io_hook, name=name)))
 
     print("Collecting activation scales...")
-    pbar = tqdm(range(num_samples))
-    dataset = load_dataset('json', data_files=dataset_path, split="train")
-    dataset = dataset.shuffle(seed=42)
-    for i in pbar:
-        input_ids = tokenizer(dataset[i]["text"], return_tensors="pt",
-                              max_length=seq_len, truncation=True).input_ids.to(device)
+    pbar = tqdm(dataloader)
+
+    for item in pbar:
+        input_ids = tokenizer(item["text"], return_tensors="pt",
+                              max_length=seq_len, truncation=True).input_ids
         model(input_ids)
         mean_scale = np.mean([v["input"] for v in act_dict.values()])
         pbar.set_description(f"Mean input scale: {mean_scale:.2f}")

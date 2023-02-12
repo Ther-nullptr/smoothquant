@@ -9,21 +9,21 @@ from transformers import AutoTokenizer
 
 from datasets import load_dataset
 
+from accelerate import Accelerator
+
 from smoothquant.opt import Int8OPTForCausalLM
 from smoothquant.smooth import smooth_lm
 from smoothquant.calibration import get_static_decoder_layer_scales
 
-def record_gpu_memory(prefix):
-    print('-' * 80)
+def record_gpu_memory(prefix, accelerator):
+    accelerator.print('-' * 80)
     for i in range(torch.cuda.device_count()):
-        memory_allocated = torch.cuda.memory_allocated(i) / 1024 ** 2
-        max_memory_allocated = torch.cuda.max_memory_allocated(i) / 1024 ** 2
-        memory_reserved = torch.cuda.memory_reserved(i) / 1024 ** 2
-        max_memory_reserved = torch.cuda.max_memory_reserved(i) / 1024 ** 2
-        print(f'({prefix}) memory use in device {i} (MiB): {memory_allocated}, max (MiB): {max_memory_allocated}, reserved (MiB): {memory_reserved}, max reserved (MiB): {max_memory_reserved}')
-    print('-' * 80)
+        memory_allocated = torch.cuda.memory_allocated(i)
+        max_memory_allocated = torch.cuda.max_memory_allocated(i)
+        accelerator.print(f'({prefix}) memory use in device {i} (MiB): {memory_allocated / 1024 / 1024}, max (MiB): {max_memory_allocated / 1024 / 1024}')
+    accelerator.print('-' * 80)
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default='facebook/opt-13b')
     parser.add_argument("--num-samples", type=int, default=512)
@@ -37,24 +37,28 @@ if __name__ == '__main__':
     parser.add_argument('--device-map', type=str, default="auto", help='device map for model parallelism')
     args = parser.parse_args()
 
+    accelerator = Accelerator()
+
     model = OPTForCausalLM.from_pretrained(
-        args.model_name, device_map=args.device_map, torch_dtype=torch.float16)
-    record_gpu_memory('load fp32 model')
+        args.model_name, device_map=args.device_map, torch_dtype=torch.float16
+    )
+    record_gpu_memory('load fp16 model', accelerator)
     act_scales = torch.load(args.act_scales)
     smooth_lm(model, act_scales, 0.5)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    record_gpu_memory('after smooth')
+    record_gpu_memory('after smooth', accelerator)
 
     if not os.path.exists(args.dataset_path):
         print(f'Cannot find the dataset at {args.dataset_path}')
         print('Please download the Pile dataset and put the validation set at the path')
         print('You can download the validation dataset of the Pile at https://mystic.the-eye.eu/public/AI/pile/val.jsonl.zst')
         raise FileNotFoundError
-
+    
     dataset = load_dataset('json', data_files=args.dataset_path, split="train")
     dataset = dataset.shuffle(seed=42)
     dataset = dataset.select(range(args.num_samples))
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=4)
+    model, tokenizer, dataloader = accelerator.prepare(model, tokenizer, dataloader)
     decoder_layer_scales, raw_scales = get_static_decoder_layer_scales(model,
                                                                        tokenizer,
                                                                        dataloader,
@@ -62,7 +66,9 @@ if __name__ == '__main__':
     output_path = Path(args.output_path) / (Path(args.model_name).name + "-smoothquant.pt")
 
     if args.export_FT:
-        model.save_pretrained(output_path)
+        accelerator.wait_for_everyone()
+        unwrapped_model = accelerator.unwrap_model(model)
+        accelerator.save(unwrapped_model.state_dict(), output_path)
         print(f"Saved smoothed model at {output_path}")
 
         output_path = Path(args.output_path) / (Path(args.model_name).name + "-smoothquant-scales.pt")
@@ -70,6 +76,12 @@ if __name__ == '__main__':
         print(f"Saved scaling factors at {output_path}")
     else:
         int8_model = Int8OPTForCausalLM.from_float(model, decoder_layer_scales)
-        record_gpu_memory('after quantize')
+        record_gpu_memory('after quantize', accelerator)
+        accelerator.wait_for_everyone()
+        unwrapped_model = accelerator.unwrap_model(int8_model)
+        accelerator.save(unwrapped_model.state_dict(), output_path)
         int8_model.save_pretrained(output_path)
         print(f"Saved int8 model at {output_path}")
+
+if __name__ == '__main__':
+    main()
