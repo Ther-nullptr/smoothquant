@@ -59,6 +59,7 @@ if __name__ == '__main__':
                                                                        tokenizer,
                                                                        dataloader,
                                                                        seq_len=args.seq_len)
+    record_gpu_memory('after calibration')
     output_path = Path(args.output_path) / (Path(args.model_name).name + "-smoothquant.pt")
 
     if args.export_FT:

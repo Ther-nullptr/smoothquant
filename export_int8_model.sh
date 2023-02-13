@@ -1,4 +1,4 @@
-MODEL_NAME=facebook/opt-6.7b
+MODEL_NAME=facebook/opt-1.3b
 
 python examples/export_int8_model.py \
        --model-name ${MODEL_NAME} \
