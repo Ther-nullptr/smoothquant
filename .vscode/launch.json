@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "smoothquant",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/yujin/projects/smoothquant/examples/export_int8_model.py",
+            "cwd": "/home/yujin/projects/smoothquant/",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--model-name",
+                "facebook/opt-1.3b",
+                "--act-scales",
+                "act_scales/facebook/opt-1.3b.pt",
+                "--device-map",
+                "auto"
+            ]
+        },
+    ]
+}

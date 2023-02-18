@@ -90,7 +90,7 @@ def get_static_decoder_layer_scales(model,
     for item in pbar:
         input_ids = tokenizer(item["text"], return_tensors="pt",
                               max_length=seq_len, truncation=True).input_ids
-        model(input_ids)
+        model(input_ids) #! [1, min(512, L)]
         mean_scale = np.mean([v["input"] for v in act_dict.values()])
         pbar.set_description(f"Mean input scale: {mean_scale:.2f}")
     for hook in hooks:

@@ -39,8 +39,10 @@ if __name__ == '__main__':
 
     model = OPTForCausalLM.from_pretrained(
         args.model_name, device_map=args.device_map, torch_dtype=torch.float16)
+    print(f"Model num: {sum(p.numel() for p in model.parameters()) / (1024**2):.2f} MiB")
+    print(f"Model size: {sum(p.numel() * p.element_size() for p in model.parameters()) / (1024**2):.2f} MiB")
     record_gpu_memory('load fp32 model')
-    act_scales = torch.load(args.act_scales)
+    act_scales = torch.load(args.act_scales) #! load per token activation scales
     smooth_lm(model, act_scales, 0.5)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     record_gpu_memory('after smooth')
@@ -60,9 +62,10 @@ if __name__ == '__main__':
                                                                        dataloader,
                                                                        seq_len=args.seq_len)
     record_gpu_memory('after calibration')
-    output_path = Path(args.output_path) / (Path(args.model_name).name + "-smoothquant.pt")
+    
 
     if args.export_FT:
+        output_path = Path(args.output_path) / (Path(args.model_name).name + "-smoothquant-smoothed.pt")
         model.save_pretrained(output_path)
         print(f"Saved smoothed model at {output_path}")
 
@@ -70,6 +73,7 @@ if __name__ == '__main__':
         torch.save(raw_scales, output_path)
         print(f"Saved scaling factors at {output_path}")
     else:
+        output_path = Path(args.output_path) / (Path(args.model_name).name + "-smoothquant-int.pt")
         int8_model = Int8OPTForCausalLM.from_float(model, decoder_layer_scales)
         record_gpu_memory('after quantize')
         int8_model.save_pretrained(output_path)
