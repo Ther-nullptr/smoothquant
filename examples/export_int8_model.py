@@ -41,7 +41,7 @@ if __name__ == '__main__':
         args.model_name, device_map=args.device_map, torch_dtype=torch.float16)
     print(f"Model num: {sum(p.numel() for p in model.parameters()) / (1024**2):.2f} MiB")
     print(f"Model size: {sum(p.numel() * p.element_size() for p in model.parameters()) / (1024**2):.2f} MiB")
-    record_gpu_memory('load fp32 model')
+    record_gpu_memory('load fp16 model')
     act_scales = torch.load(args.act_scales) #! load per token activation scales
     smooth_lm(model, act_scales, 0.5)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)

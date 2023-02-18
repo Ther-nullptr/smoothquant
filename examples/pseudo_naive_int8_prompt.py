@@ -32,8 +32,8 @@ def record_gpu_memory(prefix):
     print('-' * 80)
 
 if __name__ == '__main__':
-    model_path = '/home/yujin/projects/smoothquant/int8_models/smoothquant_2.7b_fake'
-    prompt = 'I love you forever, and I will never leave you'
+    model_path = '/home/yujin/projects/smoothquant/int8_models/naivequant_6.7b_fake'
+    prompt = 'I love you forever, and '
     print('load model')
     model = OPTForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map='auto')
     print('load tokenizer')
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     inputs = tokenizer(prompt, return_tensors="pt")
     # calculate the time (with seconds precision)
     start = time.time()
-    generate_ids = model.generate(inputs.input_ids.cuda(), max_length=30)
+    generate_ids = model.generate(inputs.input_ids.cuda(), max_length=50)
     end = time.time()
     print('time: ', end - start)
     record_gpu_memory('after int8 inference')

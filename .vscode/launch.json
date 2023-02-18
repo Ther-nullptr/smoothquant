@@ -18,5 +18,14 @@
                 "auto"
             ]
         },
+        {
+            "name": "pseudo-inference",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/yujin/projects/smoothquant/examples/pseudo_int8_prompt.py",
+            "cwd": "/home/yujin/projects/smoothquant/",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
     ]
 }
