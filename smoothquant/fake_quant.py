@@ -108,5 +108,16 @@ class W8A8Linear(nn.Module):
             new_module.bias = module.bias
         return new_module
 
+    @staticmethod
+    def from_float_with_same_quant(module, weight_quant='per_channel', act_quant='per_token', quantize_output=False):
+        assert isinstance(module, torch.nn.Linear)
+        new_module = W8A8Linear(
+            module.in_features, module.out_features, module.bias is not None, act_quant=act_quant, quantize_output=quantize_output)
+        new_module.weight = module.weight
+        new_module.weight_quant_name = weight_quant
+        if module.bias is not None:
+            new_module.bias = module.bias
+        return new_module
+
     def __repr__(self):
         return f'W8A8Linear({self.in_features}, {self.out_features}, bias={self.bias is not None}, weight_quant={self.weight_quant_name}, act_quant={self.act_quant_name}, output_quant={self.output_quant_name})'

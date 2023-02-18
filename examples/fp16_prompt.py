@@ -15,7 +15,7 @@ def record_gpu_memory(prefix):
 
 if __name__ == '__main__':
     model_path = 'facebook/opt-6.7b'
-    prompt = 'I love you forever, and '
+    prompt = 'Hey, are you consciours? Can you talk to me?'
     print('load model')
     model = OPTForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map='auto')
     print('load tokenizer')
