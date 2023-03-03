@@ -32,8 +32,10 @@ def record_gpu_memory(prefix):
     print('-' * 80)
 
 if __name__ == '__main__':
-    model_path = '/home/yujin/projects/smoothquant/int8_models/naivequant_6.7b_fake'
+    model_path = '/home/yujin/projects/smoothquant/int8_models/naivequant_1.3b_fake'
     prompt = 'Hey, are you consciours? Can you talk to me?'
+    interaction = True
+
     print('load model')
     model = OPTForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map='auto')
     print('load tokenizer')
@@ -48,3 +50,13 @@ if __name__ == '__main__':
     record_gpu_memory('after int8 inference')
     sentence = tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
     print(sentence)
+
+    if interaction:
+        while True:
+            prompt = input('prompt: ')
+            if prompt == 'exit':
+                break
+            inputs = tokenizer(prompt, return_tensors="pt")
+            generate_ids = model.generate(inputs.input_ids.cuda(), max_length=50)
+            sentence = tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+            print(sentence)

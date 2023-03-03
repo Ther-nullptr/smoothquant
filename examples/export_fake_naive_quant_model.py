@@ -5,7 +5,7 @@ from smoothquant.smooth import smooth_lm
 from smoothquant.fake_quant import W8A8Linear
 from tqdm import tqdm
 
-size = '6.7b'
+size = '1.3b'
 model_name = f'facebook/opt-{size}'
 
 def quantize_model(model, weight_quant='per_tensor', act_quant='per_tensor', quantize_bmm_input=True):

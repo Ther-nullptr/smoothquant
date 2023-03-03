@@ -5,7 +5,7 @@ from smoothquant.smooth import smooth_lm
 from smoothquant.fake_quant import W8A8Linear
 from tqdm import tqdm
 
-size = '6.7b'
+size = '1.3b'
 model_name = f'facebook/opt-{size}'
 ratio = 0.5
 
