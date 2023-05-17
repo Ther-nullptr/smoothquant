@@ -166,3 +166,4 @@ cython_debug/
 
 act_scales/
 *.pt
+smoothquant/results/

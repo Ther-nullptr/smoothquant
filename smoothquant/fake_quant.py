@@ -121,3 +121,14 @@ class W8A8Linear(nn.Module):
 
     def __repr__(self):
         return f'W8A8Linear({self.in_features}, {self.out_features}, bias={self.bias is not None}, weight_quant={self.weight_quant_name}, act_quant={self.act_quant_name}, output_quant={self.output_quant_name})'
+
+
+if __name__ == '__main__':
+    # test of quantize_weight_per_channel_absmax
+    w = torch.randn(10, 10)
+    w_q = quantize_weight_per_channel_absmax(w)
+    print(w_q)
+
+    # test of quantize_weight_per_tensor_absmax
+    w_q = quantize_weight_per_tensor_absmax(w)
+    print(w_q)

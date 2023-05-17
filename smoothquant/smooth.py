@@ -16,12 +16,10 @@ def smooth_ln_fcs(ln, fcs, act_scales, alpha=0.5):
 
     device, dtype = fcs[0].weight.device, fcs[0].weight.dtype
     act_scales = act_scales.to(device=device, dtype=dtype)
-    weight_scales = torch.cat([fc.weight.abs().max(
-        dim=0, keepdim=True)[0] for fc in fcs], dim=0) #! core smooth function
+    weight_scales = torch.cat([fc.weight.abs().max(dim=0, keepdim=True)[0] for fc in fcs], dim=0) #! core smooth function
     weight_scales = weight_scales.max(dim=0)[0].clamp(min=1e-5)
 
-    scales = (act_scales.pow(alpha) / weight_scales.pow(1-alpha)
-              ).clamp(min=1e-5).to(device).to(dtype)
+    scales = (act_scales.pow(alpha) / weight_scales.pow(1-alpha)).clamp(min=1e-5).to(device).to(dtype)
 
     ln.weight.div_(scales)
     ln.bias.div_(scales) #? layernorm?
