@@ -1,15 +1,9 @@
-import transformers
-import torch
-from models_utils import BaseLM, find_layers
-from transformers import OPTForCausalLM, AutoTokenizer
-import torch.nn.functional as F
-from torch import nn
-import torch
-from tqdm import tqdm
 import pdb
+import torch
+import torch.nn.functional as F
+from models_utils import BaseLM
 
-
-class OPTClass(BaseLM):
+class LMClass(BaseLM):
     def __init__(self, model, tokenizer, batch_size_per_gpu):
 
         super().__init__()
@@ -18,13 +12,13 @@ class OPTClass(BaseLM):
         self.batch_size_per_gpu = batch_size_per_gpu
 
         self.model = model
-        self.seqlen = self.model.config.max_position_embeddings
+        self.seqlen = 2048
         self.model.eval()
 
         # pretrained tokenizer for neo is broken for now so just hard-coding this to gpt2
         self.tokenizer = tokenizer
         self.vocab_size = self.tokenizer.vocab_size
-        print("OPT vocab size: ", self.vocab_size)
+        print("LM vocab size: ", self.vocab_size)
 
     @property
     def eot_token(self) -> str:
@@ -41,7 +35,7 @@ class OPTClass(BaseLM):
             return self.gpt2.config.n_ctx
         except AttributeError:
             # gptneoconfig doesn't have n_ctx apparently
-            return self.model.config.max_position_embeddings
+            return 2048
 
     @property
     def max_gen_toks(self):
@@ -100,4 +94,4 @@ class OPTClass(BaseLM):
 
 
 # for backwards compatibility
-OPT = OPTClass
+LM = LMClass

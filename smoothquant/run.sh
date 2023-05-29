@@ -1,0 +1,1 @@
+python evaluate.py --model-name facebook/opt-2.7b --task lambada_openai
